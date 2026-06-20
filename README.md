@@ -145,57 +145,49 @@ Examples:
 # dbt Run
 
 Successful execution:
-
-![dbt run](screenshots/dbt-run-success.png)
+![dbt run](docs/screenshots/dbt-run-success.png)
 
 ---
 
 # dbt Tests
 
 Successful data tests:
-
-![dbt tests](screenshots/dbt-test-success.png)
+![dbt tests](docs/screenshots/dbt-test-success.png)
 
 ---
 
 # dbt Snapshot
 
 Snapshot execution:
-
-![snapshot](screenshots/dbt-snapshot-success.png)
+![snapshot](docs/screenshots/dbt-snapshot-success.png)
 
 ---
 
 # dbt Documentation
 
 Generated docs:
-
-![docs](screenshots/dbt-docs-overview.png)
+![docs](docs/screenshots/dbt-docs-overview.png)
 
 ---
 
 # Lineage Graph
 
 End-to-end lineage:
-
-![lineage](screenshots/dbt-lineage-graph.png)
-
+![lineage](docs/screenshots/dbt-lineage-graph.png)
+![lineage](docs/screenshots/dbt-lineage-graph2.png)
 ---
 
 # Snowflake RAW Tables
 
 RAW schema:
-
-![raw](screenshots/snowflake-raw-tables.png)
+![raw tables](docs/screenshots/snowflake-raw-tables.png)
 
 ---
 
 # Snowflake DEV Models
 
 Analytics models:
-
-![dev](screenshots/snowflake-dev-models.png)
-
+![dev models](docs/screenshots/snowflake-dev-models.png)
 ---
 
 # Example Commands
