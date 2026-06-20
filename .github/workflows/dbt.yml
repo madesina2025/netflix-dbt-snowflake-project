@@ -1,0 +1,38 @@
+name: dbt Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  dbt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dbt
+        run: |
+          pip install dbt-core dbt-snowflake
+
+      - name: Install Dependencies
+        run: |
+          dbt deps
+        working-directory: ./netflix
+
+      - name: Run Models
+        run: |
+          dbt run
+        working-directory: ./netflix
+
+      - name: Execute Tests
+        run: |
+          dbt test
+        working-directory: ./netflix

@@ -1,0 +1,21 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# dbt
+target/
+logs/
+dbt_packages/
+
+# VSCode
+.vscode/
+
+# Mac
+.DS_Store
+
+# Snowflake credentials
+profiles.yml
+
+# Environment variables
+.env

@@ -1,0 +1,21 @@
+version: 2
+
+exposures:
+  - name: netflix_powerbi_dashboard
+    label: Netflix Analytics Power BI Dashboard
+    type: dashboard
+    maturity: medium
+    url: ""
+    description: Power BI dashboard built from Snowflake dbt mart tables for Netflix movie, ratings, genre and tag analysis.
+
+    depends_on:
+      - ref('mart_movies_releases')
+      - ref('ep_movies_with_tags')
+      - ref('fct_ratings')
+      - ref('fct_genome_scores')
+      - ref('dim_movies')
+      - ref('dim_users')
+
+    owner:
+      name: Mukaila Adesina
+      email: "madesina2025@gmail.com"

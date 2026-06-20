@@ -1,0 +1,222 @@
+-- Snowflake user creation
+-- Step 1: Use an admin role
+USE ROLE ACCOUNTADMIN;
+
+-- Step 2: Create the `transform` role and assign it to ACCOUNTADMIN
+CREATE ROLE IF NOT EXISTS TRANSFORM;
+GRANT ROLE TRANSFORM TO ROLE ACCOUNTADMIN;
+
+-- Step 3: Create a default warehouse
+CREATE WAREHOUSE IF NOT EXISTS COMPUTE_WH;
+GRANT OPERATE ON WAREHOUSE COMPUTE_WH TO ROLE TRANSFORM;
+
+DROP STAGE IF EXISTS MOVIELENS.RAW.NETFLIXSTAGE;
+
+-- Step 4: Create the `dbt` user and assign to the transform role
+CREATE USER IF NOT EXISTS dbt
+  PASSWORD='dbtPassword123'
+  LOGIN_NAME='dbt'
+  MUST_CHANGE_PASSWORD=FALSE
+  DEFAULT_WAREHOUSE='COMPUTE_WH'
+  DEFAULT_ROLE=TRANSFORM
+  DEFAULT_NAMESPACE='MOVIELENS.RAW'
+  COMMENT='DBT user used for data transformation';
+ALTER USER dbt SET TYPE = LEGACY_SERVICE;
+GRANT ROLE TRANSFORM TO USER dbt;
+
+-- Step 5: Create a database and schema for the MovieLens project
+CREATE DATABASE IF NOT EXISTS MOVIELENS;
+CREATE SCHEMA IF NOT EXISTS MOVIELENS.RAW;
+
+-- Step 6: Grant permissions to the `transform` role
+GRANT ALL ON WAREHOUSE COMPUTE_WH TO ROLE TRANSFORM;
+GRANT ALL ON DATABASE MOVIELENS TO ROLE TRANSFORM;
+GRANT ALL ON ALL SCHEMAS IN DATABASE MOVIELENS TO ROLE TRANSFORM;
+GRANT ALL ON FUTURE SCHEMAS IN DATABASE MOVIELENS TO ROLE TRANSFORM;
+GRANT ALL ON ALL TABLES IN SCHEMA MOVIELENS.RAW TO ROLE TRANSFORM;
+GRANT ALL ON FUTURE TABLES IN SCHEMA MOVIELENS.RAW TO ROLE TRANSFORM;
+
+USE DATABASE MOVIELENS;
+USE SCHEMA RAW;
+
+CREATE OR REPLACE STAGE NETFLIX_STAGE
+URL = 's3url'
+CREDENTIALS = (
+    AWS_KEY_ID = 'YOUR_AWS_ACCESS_KEY'
+    AWS_SECRET_KEY = 'YOUR_AWS_SECRET_KEY'
+);
+
+
+netflixdatasetdbtmk
+
+LIST @MOVIELENS.RAW.NETFLIX_STAGE;
+
+-- Set defaults
+USE WAREHOUSE COMPUTE_WH;
+USE DATABASE MOVIELENS;
+USE SCHEMA RAW;
+
+-- Load raw_movies
+CREATE OR REPLACE TABLE raw_movies (
+  movieId INTEGER,
+  title STRING,
+  genres STRING
+);
+
+-- CREATE STAGE netflix_stage
+--   URL='s3://netflixmoviedata'
+--   CREDENTIALS=(AWS_KEY_ID=' ' AWS_SECRET_KEY=' ');
+
+-- MOVIELENS.RAW.R_GENOME_SCORESCOPY INTO raw_movies
+-- FROM '@netflixstage/movies.csv'
+-- FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"');
+
+LIST @MOVIELENS.RAW.NETFLIX_STAGE;
+
+
+COPY INTO raw_movies
+FROM @MOVIELENS.RAW.NETFLIX_STAGE/movies.csv
+FILE_FORMAT = (TYPE='CSV' SKIP_HEADER=1 FIELD_OPTIONALLY_ENCLOSED_BY='"')
+ON_ERROR='CONTINUE';
+
+-- Load raw_ratings
+CREATE OR REPLACE TABLE raw_ratings (
+  userId INTEGER,
+  movieId INTEGER,
+  rating FLOAT,
+  timestamp BIGINT
+);
+
+COPY INTO raw_ratings
+FROM '@netflix_stage/ratings.csv'
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"');
+
+-- Load raw_tags
+CREATE OR REPLACE TABLE raw_tags (
+  userId INTEGER,
+  movieId INTEGER,
+  tag STRING,
+  timestamp BIGINT
+);
+
+COPY INTO raw_tags
+FROM '@netflix_stage/tags.csv'
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"')
+ON_ERROR = 'CONTINUE';
+
+-- Load raw_genome_scores
+CREATE OR REPLACE TABLE raw_genome_scores (
+  movieId INTEGER,
+  tagId INTEGER,
+  relevance FLOAT
+);
+
+COPY INTO raw_genome_scores
+FROM '@netflix_stage/genome-scores.csv'
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"');
+
+-- Load raw_genome_tags
+CREATE OR REPLACE TABLE raw_genome_tags (
+  tagId INTEGER,
+  tag STRING
+);
+
+COPY INTO raw_genome_tags
+FROM '@netflix_stage/genome-tags.csv'
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"');
+
+-- Load raw_links
+CREATE OR REPLACE TABLE raw_links (
+  movieId INTEGER,
+  imdbId INTEGER,
+  tmdbId INTEGER
+);
+
+MOVIELENS.RAW.NETFLIX_STAGEMOVIELENS.RAW.NETFLIX_STAGEMOVIELENS.RAW.NETFLIX_STAGECOPY INTO raw_links
+FROM '@netflix_stage/links.csv'
+FILE_FORMAT = (TYPE = 'CSV' SKIP_HEADER = 1 FIELD_OPTIONALLY_ENCLOSED_BY = '"');
+
+LIST @NETFLIX_STAGE;
+
+SELECT COUNT(*) FROM RAW_MOVIES;
+SELECT COUNT(*) FROM RAW_RATINGS;
+SELECT COUNT(*) FROM RAW_TAGS;
+SELECT COUNT(*) FROM RAW_GENOME_TAGS;
+SELECT COUNT(*) FROM RAW_GENOME_SCORES;
+SELECT COUNT(*) FROM RAW_LINKS;
+
+SHOW SCHEMAS;
+
+SELECT *
+FROM MOVIELENS.SNAPSHOTS.SNAP_TAGS
+LIMIT 10;
+
+
+
+
+-- Windows
+virtualenv venv
+venv\Scripts\activate
+
+-- MAC
+mkdir course
+cd course
+virtualenv venv
+. venv/bin/activate
+
+-- install dbt snowflake
+pip install dbt-snowflake==1.9.0
+
+-- create dbt profile
+-- mac
+mkdir ~/.dbt
+
+-- windows 
+mkdir %userprofile%\.dbt
+
+#initiate dbt project 
+dbt init <projectname>
+
+-- Add staging tables -> all will be views
+-- Update dbt_project.yaml file to support of tables
+dim:
+  +materialized: table
+--   +schema: dim
+-- fct:
+--   +materialized: incremental
+--   +schema: fct
+-- mart:
+--   +materialized: table
+--   +schema: mart
+-- snapshots:
+--   +schema: snapshots
+
+
+USE DATABASE MOVIELENS;
+USE SCHEMA RAW;
+
+SHOW TABLES LIKE 'RAW_%';
+
+
+SELECT 'RAW_MOVIES' AS table_name, COUNT(*) AS row_count FROM RAW_MOVIES
+UNION ALL
+SELECT 'RAW_RATINGS', COUNT(*) FROM RAW_RATINGS
+UNION ALL
+SELECT 'RAW_TAGS', COUNT(*) FROM RAW_TAGS
+UNION ALL
+SELECT 'RAW_GENOME_TAGS', COUNT(*) FROM RAW_GENOME_TAGS
+UNION ALL
+SELECT 'RAW_GENOME_SCORES', COUNT(*) FROM RAW_GENOME_SCORES
+UNION ALL
+SELECT 'RAW_LINKS', COUNT(*) FROM RAW_LINKS;
+
+SHOW TABLES IN SCHEMA MOVIELENS.SNAPSHOTS;
+
+SELECT *
+FROM MOVIELENS.SNAPSHOTS.SNAP_TAGS
+LIMIT 10;
+
+USE DATABASE MOVIELENS;
+USE SCHEMA DEV;
+
+SHOW TABLES LIKE '%_%';
